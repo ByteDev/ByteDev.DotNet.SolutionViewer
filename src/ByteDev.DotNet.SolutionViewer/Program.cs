@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Xml.Linq;
@@ -21,22 +20,27 @@ namespace ByteDev.DotNet.SolutionViewer
                 return;
             }
 
-            foreach (var basePath in args)
+            var slnPaths = Directory.EnumerateFiles(args.First(), "*.sln", SearchOption.AllDirectories);
+
+            if (slnPaths == null || !slnPaths.Any())
             {
-                Output.WriteLine($"Path: {basePath}");
+                Output.WriteLine($"{args.First()} and its sub directories contain no solution files.", new OutputColor(ConsoleColor.Red));
+                return;
+            }
+
+            foreach (var slnPath in slnPaths)
+            {
+                Output.WriteLine($"Path: {slnPath}");
                 Output.WriteLine();
 
-                var slnFiles = GetSolutionFiles(basePath);
-
-                foreach (var slnFile in slnFiles)
-                {
-                    WriteSlnDetails(basePath, slnFile);
-                }
+                WriteSlnDetails(slnPath);
             }
         }
 
-        private static void WriteSlnDetails(string basePath, FileInfo slnFile)
+        private static void WriteSlnDetails(string slnFilePath)
         {
+            var slnFile = new FileInfo(slnFilePath);
+
             Output.WriteLine(slnFile.Name, new OutputColor(ConsoleColor.White, ConsoleColor.Blue));
 
             var slnText = File.ReadAllText(slnFile.FullName);
@@ -45,7 +49,15 @@ namespace ByteDev.DotNet.SolutionViewer
 
             foreach (var slnProject in dotNetSolution.Projects.Where(p => !p.IsSolutionFolder).OrderBy(p => p.Name))
             {
-                var dotNetProject = CreateDotNetProject(slnProject, basePath);
+                // HACK: to get round bug in DotNetSolution
+                if (Path.GetExtension(slnProject.Path) == ".deployproj")
+                {
+                    Output.WriteAlignToSides(slnProject.Name, "(Unknown)", new OutputColor(ConsoleColor.Red));
+                    continue;
+                }
+
+                var basePath = Path.GetDirectoryName(slnFilePath);
+                var dotNetProject = CreateDotNetProject(basePath, slnProject);
 
                 if (dotNetProject == null)
                     Output.WriteAlignToSides(slnProject.Name, "(Unknown)", new OutputColor(ConsoleColor.Red));
@@ -56,7 +68,7 @@ namespace ByteDev.DotNet.SolutionViewer
             Output.WriteLine();
         }
 
-        private static DotNetProject CreateDotNetProject(DotNetSolutionProject project, string basePath)
+        private static DotNetProject CreateDotNetProject(string basePath, DotNetSolutionProject project)
         {
             try
             {
@@ -67,13 +79,6 @@ namespace ByteDev.DotNet.SolutionViewer
             {
                 return null;
             }
-        }
-
-        private static IEnumerable<FileInfo> GetSolutionFiles(string basePath)
-        {
-            var directory = new DirectoryInfo(basePath);
-
-            return directory.GetFiles("*.sln");
         }
     }
 }
