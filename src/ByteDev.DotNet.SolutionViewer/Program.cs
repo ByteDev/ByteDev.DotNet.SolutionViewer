@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Xml.Linq;
 using ByteDev.Cmd;
 using ByteDev.DotNet.Project;
@@ -8,33 +11,62 @@ using ByteDev.DotNet.Solution;
 
 namespace ByteDev.DotNet.SolutionViewer
 {
-    class Program
+    internal class Program
     {
         private static readonly Output Output = new Output();
 
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
+            OutputHeader();
+
             if (args == null || args.Length == 0)
             {
-                Output.WriteLine("Error - no paths supplied", new OutputColor(ConsoleColor.Red));
-                return;
+                HandleError("No base path supplied as argument.");
             }
 
-            var slnPaths = Directory.EnumerateFiles(args.First(), "*.sln", SearchOption.AllDirectories);
+            var slnPaths = GetSlnPaths(args.First());
 
-            if (slnPaths == null || !slnPaths.Any())
+            if (slnPaths == null || slnPaths.Count == 0)
             {
-                Output.WriteLine($"{args.First()} and its sub directories contain no solution files.", new OutputColor(ConsoleColor.Red));
-                return;
+                HandleError($"{args.First()} and its sub directories contain no solution files.");
             }
+
+            Output.WriteLine($"{slnPaths.Count} solutions found.");
+            Output.WriteBlankLines();
 
             foreach (var slnPath in slnPaths)
             {
-                Output.WriteLine($"Path: {slnPath}");
-                Output.WriteLine();
-
                 WriteSlnDetails(slnPath);
             }
+        }
+
+        private static IList<string> GetSlnPaths(string basePath)
+        {
+            try
+            {
+                return Directory.EnumerateFiles(basePath, "*.sln", SearchOption.AllDirectories)?.ToList();
+            }
+            catch (DirectoryNotFoundException)
+            {
+                HandleError($"Directory '{basePath}' does not exist.");
+                return null;
+            }
+        }
+
+        private static void OutputHeader()
+        {
+            var assembly = Assembly.GetExecutingAssembly();
+            var fvi = FileVersionInfo.GetVersionInfo(assembly.Location);
+
+            Output.WriteBlankLines();
+
+            Output.Write(new MessageBox($" SolutionViewer {fvi.FileVersion} ")
+            {
+                TextColor = new OutputColor(ConsoleColor.White, ConsoleColor.Blue),
+                BorderColor = new OutputColor(ConsoleColor.White, ConsoleColor.Blue)
+            });
+
+            Output.WriteBlankLines();
         }
 
         private static void WriteSlnDetails(string slnFilePath)
@@ -42,6 +74,9 @@ namespace ByteDev.DotNet.SolutionViewer
             var slnFile = new FileInfo(slnFilePath);
 
             Output.WriteLine(slnFile.Name, new OutputColor(ConsoleColor.White, ConsoleColor.Blue));
+            Output.WriteBlankLines();
+            Output.WriteLine($"Path: {slnFilePath}");
+            Output.WriteBlankLines();
 
             var slnText = File.ReadAllText(slnFile.FullName);
 
@@ -49,36 +84,33 @@ namespace ByteDev.DotNet.SolutionViewer
 
             foreach (var slnProject in dotNetSolution.Projects.Where(p => !p.IsSolutionFolder).OrderBy(p => p.Name))
             {
-                // HACK: to get round bug in DotNetSolution
-                if (Path.GetExtension(slnProject.Path) == ".deployproj")
-                {
-                    Output.WriteAlignToSides(slnProject.Name, "(Unknown)", new OutputColor(ConsoleColor.Red));
-                    continue;
-                }
-
                 var basePath = Path.GetDirectoryName(slnFilePath);
-                var dotNetProject = CreateDotNetProject(basePath, slnProject);
 
-                if (dotNetProject == null)
-                    Output.WriteAlignToSides(slnProject.Name, "(Unknown)", new OutputColor(ConsoleColor.Red));
-                else
+                try
+                {
+                    var dotNetProject = CreateDotNetProject(basePath, slnProject.Path);
+
                     Output.WriteAlignToSides(slnProject.Name, dotNetProject.ProjectTargets.Single().Description);
+                }
+                catch (InvalidDotNetProjectException)
+                {
+                    Output.WriteAlignToSides(slnProject.Name, "(Unknown)", new OutputColor(ConsoleColor.Yellow));
+                }
             }
 
             Output.WriteLine();
         }
 
-        private static DotNetProject CreateDotNetProject(string basePath, DotNetSolutionProject project)
+        private static DotNetProject CreateDotNetProject(string basePath, string projectPath)
         {
-            try
-            {
-                var projXml = XDocument.Load(Path.Combine(basePath, project.Path));
-                return new DotNetProject(projXml);
-            }
-            catch (InvalidDotNetProjectException)
-            {
-                return null;
-            }
+            var projXml = XDocument.Load(Path.Combine(basePath, projectPath));
+            return new DotNetProject(projXml);
+        }
+
+        private static void HandleError(string message)
+        {
+            Output.WriteLine(message, new OutputColor(ConsoleColor.Red));
+            Environment.Exit(0);
         }
     }
 }
