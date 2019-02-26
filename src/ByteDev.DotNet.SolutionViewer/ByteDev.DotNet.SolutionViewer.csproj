@@ -10,7 +10,7 @@
 
   <ItemGroup>
     <PackageReference Include="ByteDev.Cmd" Version="1.0.0" />
-    <PackageReference Include="ByteDev.DotNet" Version="1.2.0" />
+    <PackageReference Include="ByteDev.DotNet" Version="3.0.0" />
   </ItemGroup>
 
 </Project>
