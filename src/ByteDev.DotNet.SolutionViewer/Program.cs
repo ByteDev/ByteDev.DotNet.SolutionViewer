@@ -12,7 +12,7 @@ namespace ByteDev.DotNet.SolutionViewer
 
         private static void Main(string[] args)
         {
-            Output.WriteHeader();
+            Output.WriteAppHeader();
 
             if (args == null || args.Length == 0)
             {
@@ -31,9 +31,14 @@ namespace ByteDev.DotNet.SolutionViewer
             Output.WriteLine($"{slnPaths.Count} solutions found.");
             Output.WriteBlankLines();
 
+            var options = new WriteSlnProjectsOptions { WriteProjectType = true };
+
             foreach (var slnPath in slnPaths)
             {
-                Output.WriteSlnDetails(slnPath);
+                var slnFileInfo = new FileInfo(slnPath);
+
+                Output.WriteSlnHeader(slnFileInfo);
+                Output.WriteSlnProjects(slnFileInfo, options);
             }
         }
 
