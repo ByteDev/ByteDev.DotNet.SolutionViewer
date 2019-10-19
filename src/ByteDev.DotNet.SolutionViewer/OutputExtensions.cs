@@ -1,12 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using ByteDev.Cmd;
 using ByteDev.DotNet.Project;
-using ByteDev.DotNet.Solution;
+using ByteDev.DotNet.SolutionViewer.ModelExtensions;
 
 namespace ByteDev.DotNet.SolutionViewer
 {
@@ -38,7 +36,7 @@ namespace ByteDev.DotNet.SolutionViewer
 
         public static void WriteSlnProjects(this Output source, FileInfo slnFileInfo, WriteSlnProjectsOptions options)
         {
-            foreach (var slnProject in GetDotNetSolutionProjects(slnFileInfo))
+            foreach (var slnProject in Io.GetDotNetSolutionProjects(slnFileInfo))
             {
                 var basePath = Path.GetDirectoryName(slnFileInfo.FullName);
 
@@ -46,7 +44,7 @@ namespace ByteDev.DotNet.SolutionViewer
                 {
                     var dotNetProject = DotNetProject.Load(Path.Combine(basePath, slnProject.Path));
 
-                    source.WriteAlignToSides(CreateProjectNameText(slnProject, options), CreateProjectTargetText(dotNetProject));
+                    source.WriteAlignToSides(slnProject.ToText(options), dotNetProject.ToText());
                 }
                 catch (InvalidDotNetProjectException)
                 {
@@ -56,38 +54,5 @@ namespace ByteDev.DotNet.SolutionViewer
 
             source.WriteLine();
         }
-
-        private static string CreateProjectNameText(DotNetSolutionProject slnProject, WriteSlnProjectsOptions options)
-        {
-            var projectText = slnProject.Name;
-
-            if (options.WriteProjectType)
-            {
-                projectText += $" ({slnProject.Type.Description.Replace("(", string.Empty).Replace(")", string.Empty)})";       // Removed () cos (Unknown)
-            }
-
-            return projectText;
-        }
-
-        private static string CreateProjectTargetText(DotNetProject project)
-        {
-            return string.Join(',', project.ProjectTargets.Select(t => t.Description));
-        }
-
-        private static IEnumerable<DotNetSolutionProject> GetDotNetSolutionProjects(FileInfo slnFileInfo)
-        {
-            var dotNetSolution = DotNetSolution.Load(slnFileInfo.FullName);
-
-            var slnProjects = dotNetSolution.Projects
-                .Where(p => !p.Type.IsSolutionFolder)
-                .OrderBy(p => p.Name);
-
-            return slnProjects;
-        }
-    }
-
-    internal class WriteSlnProjectsOptions
-    {
-        public bool WriteProjectType { get; set; }
     }
 }
