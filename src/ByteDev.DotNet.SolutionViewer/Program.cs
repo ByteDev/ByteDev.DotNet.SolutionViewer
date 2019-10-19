@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using ByteDev.Cmd;
+using ByteDev.Cmd.Arguments;
 
 namespace ByteDev.DotNet.SolutionViewer
 {
@@ -10,28 +11,51 @@ namespace ByteDev.DotNet.SolutionViewer
     {
         private static readonly Output Output = new Output();
 
+        private static CmdArgInfo _cmdArgInfo;
+
         private static void Main(string[] args)
         {
             Output.WriteAppHeader();
 
-            if (args == null || args.Length == 0)
+            try
             {
-                HandleError("No base path supplied as argument.");
-                return;
+                _cmdArgInfo = new CmdArgInfo(args, new List<CmdAllowedArg>
+                {
+                    new CmdAllowedArg('p', true) {Description = "Base path to view on."},
+                    new CmdAllowedArg('h', false) {Description = "This help screen."}
+                });
+
+                string path = null;
+
+                foreach (var cmdArg in _cmdArgInfo.Arguments)
+                {
+                    switch (cmdArg.ShortName)
+                    {
+                        case 'p':
+                            path = cmdArg.Value;
+                            break;
+                        case 'h':
+                            Output.WriteLine(_cmdArgInfo.HelpText);
+                            return;
+                    }
+                }
+                
+                var slnPaths = GetSlnPaths(path);
+
+                Output.WriteLine($"{slnPaths.Count} solutions found.");
+                Output.WriteBlankLines();
+
+                WriteSlnDetails(slnPaths);
             }
-
-            var slnPaths = GetSlnPaths(args.First());
-
-            if (slnPaths == null || slnPaths.Count == 0)
+            catch (Exception ex)
             {
-                HandleError($"{args.First()} and its sub directories contain no solution files.");
-                return;
+                HandleError(ex.Message);
             }
+        }
 
-            Output.WriteLine($"{slnPaths.Count} solutions found.");
-            Output.WriteBlankLines();
-
-            var options = new WriteSlnProjectsOptions { WriteProjectType = true };
+        private static void WriteSlnDetails(IEnumerable<string> slnPaths)
+        {
+            var options = new WriteSlnProjectsOptions {WriteProjectType = true};
 
             foreach (var slnPath in slnPaths)
             {
@@ -44,20 +68,21 @@ namespace ByteDev.DotNet.SolutionViewer
 
         private static IList<string> GetSlnPaths(string basePath)
         {
-            try
-            {
-                return Directory.EnumerateFiles(basePath, "*.sln", SearchOption.AllDirectories)?.ToList();
-            }
-            catch (DirectoryNotFoundException)
-            {
-                HandleError($"Directory '{basePath}' does not exist.");
-                return null;
-            }
+            if(string.IsNullOrEmpty(basePath))
+                throw new ArgumentException("No base path supplied as argument.");
+
+            var slnPaths = Directory.EnumerateFiles(basePath, "*.sln", SearchOption.AllDirectories)?.ToList();
+
+            if (slnPaths == null || slnPaths.Count == 0)
+                HandleError($"{basePath} and its sub directories contain no solution files.");
+
+            return slnPaths;
         }
 
         private static void HandleError(string message)
         {
-            Output.WriteLine(message, new OutputColor(ConsoleColor.Red));
+            Output.WriteLine(message, new OutputColor(ConsoleColor.Red, ConsoleColor.Black));
+            Output.WriteLine(_cmdArgInfo.HelpText);
             Environment.Exit(0);
         }
     }
