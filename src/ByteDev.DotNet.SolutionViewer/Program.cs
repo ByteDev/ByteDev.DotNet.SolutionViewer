@@ -12,34 +12,20 @@ namespace ByteDev.DotNet.SolutionViewer
         private static readonly Output Output = new Output();
 
         private static CmdArgInfo _cmdArgInfo;
+        private static IList<CmdAllowedArg> _cmdAllowedArgs;
 
         private static void Main(string[] args)
         {
             Output.WriteAppHeader();
 
+            _cmdAllowedArgs = CreateAllowedArgs();
+
             try
             {
-                _cmdArgInfo = new CmdArgInfo(args, new List<CmdAllowedArg>
-                {
-                    new CmdAllowedArg('p', true) {Description = "Base path to view on."},
-                    new CmdAllowedArg('h', false) {Description = "This help screen."}
-                });
-
-                string path = null;
-
-                foreach (var cmdArg in _cmdArgInfo.Arguments)
-                {
-                    switch (cmdArg.ShortName)
-                    {
-                        case 'p':
-                            path = cmdArg.Value;
-                            break;
-                        case 'h':
-                            Output.WriteLine(_cmdArgInfo.HelpText);
-                            return;
-                    }
-                }
+                _cmdArgInfo = new CmdArgInfo(args, _cmdAllowedArgs);
                 
+                var path = _cmdArgInfo.Arguments.Single(a => a.ShortName == 'p').Value;
+
                 var slnPaths = GetSlnPaths(path);
 
                 Output.WriteLine($"{slnPaths.Count} solutions found.");
@@ -51,6 +37,14 @@ namespace ByteDev.DotNet.SolutionViewer
             {
                 HandleError(ex.Message);
             }
+        }
+
+        private static List<CmdAllowedArg> CreateAllowedArgs()
+        {
+            return new List<CmdAllowedArg>
+            {
+                new CmdAllowedArg('p', true) {Description = "Base path to view on.", IsRequired = true}
+            };
         }
 
         private static void WriteSlnDetails(IEnumerable<string> slnPaths)
@@ -82,7 +76,7 @@ namespace ByteDev.DotNet.SolutionViewer
         private static void HandleError(string message)
         {
             Output.WriteLine(message, new OutputColor(ConsoleColor.Red, ConsoleColor.Black));
-            Output.WriteLine(_cmdArgInfo.HelpText);
+            Output.WriteLine(_cmdAllowedArgs.HelpText());
             Environment.Exit(0);
         }
     }
