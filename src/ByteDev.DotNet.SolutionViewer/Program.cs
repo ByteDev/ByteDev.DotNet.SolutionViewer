@@ -18,20 +18,24 @@ namespace ByteDev.DotNet.SolutionViewer
         {
             Output.WriteAppHeader();
 
-            _cmdAllowedArgs = CreateAllowedArgs();
+            _cmdAllowedArgs = CmdAllowedArgsFactory.Create();
 
             try
             {
                 _cmdArgInfo = new CmdArgInfo(args, _cmdAllowedArgs);
                 
-                var path = _cmdArgInfo.Arguments.Single(a => a.ShortName == 'p').Value;
-
-                var slnPaths = GetSlnPaths(path);
+                var path = _cmdArgInfo.Arguments.Single(a => a.ShortName == 'p');
+                var useTable = _cmdArgInfo.Arguments.SingleOrDefault(a => a.ShortName == 't');
+                
+                var slnPaths = GetSlnPaths(path.Value);
 
                 Output.WriteLine($"{slnPaths.Count} solutions found.");
                 Output.WriteBlankLines();
 
-                WriteSlnDetails(slnPaths);
+                if (useTable != null)
+                    WriteSlnDetailsAsTable(slnPaths);
+                else
+                    WriteSlnDetails(slnPaths);
             }
             catch (Exception ex)
             {
@@ -39,12 +43,17 @@ namespace ByteDev.DotNet.SolutionViewer
             }
         }
 
-        private static List<CmdAllowedArg> CreateAllowedArgs()
+        private static void WriteSlnDetailsAsTable(IList<string> slnPaths)
         {
-            return new List<CmdAllowedArg>
+            var options = new WriteSlnProjectsOptions { WriteProjectType = true };
+
+            foreach (var slnPath in slnPaths)
             {
-                new CmdAllowedArg('p', true) {Description = "Base path to view on.", IsRequired = true}
-            };
+                var slnFileInfo = new FileInfo(slnPath);
+
+                Output.WriteSlnHeader(slnFileInfo);
+                Output.WriteSlnProjectsInTable(slnFileInfo, options);
+            }
         }
 
         private static void WriteSlnDetails(IEnumerable<string> slnPaths)

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ByteDev.DotNet.SolutionViewer": {
+      "commandName": "Project",
+      "commandLineArgs": "-p C:\\Dev\\GitHub -t"
+    }
+  }
+}
