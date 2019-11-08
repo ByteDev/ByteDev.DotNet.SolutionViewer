@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using ByteDev.Cmd;
+using ByteDev.Cmd.Tables;
 using ByteDev.DotNet.Project;
 using ByteDev.DotNet.SolutionViewer.ModelExtensions;
 
@@ -80,11 +81,11 @@ namespace ByteDev.DotNet.SolutionViewer
                 {
                     var dotNetProject = DotNetProject.Load(Path.Combine(basePath, slnProject.Path));
                     
-                    table.UpdateRow(rowNumber, new []{ slnProject.ToText(options), dotNetProject.ToText() });
+                    table.UpdateRow(rowNumber, new []{ new Cell(slnProject.ToText(options)), new Cell(dotNetProject.ToText()) { ValueAlignment = CellValueAlignment.Right } });
                 }
                 catch (InvalidDotNetProjectException)
                 {
-                    table.UpdateRow(rowNumber, new[] { slnProject.ToText(options), "(Unknown)" });
+                    table.UpdateRow(rowNumber, new[] { new Cell(slnProject.ToText(options)), new Cell("(Unknown)") { ValueAlignment = CellValueAlignment.Right}});
                 }
 
                 rowNumber++;
