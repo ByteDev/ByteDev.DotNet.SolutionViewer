@@ -6,7 +6,7 @@
     <Authors>Paul Stanley</Authors>
     <Description>Console application that given a base path outputs a report of all the solutions in the base path, the projects in each solution and what their targets (.NET Framework, Standard, Core etc.) are.</Description>
     <AssemblyName>SolutionViewer</AssemblyName>
-    <Version>2.0.0</Version>
+    <Version>2.0.1</Version>
   </PropertyGroup>
 
   <ItemGroup>

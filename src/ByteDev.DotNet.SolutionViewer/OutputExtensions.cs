@@ -30,7 +30,9 @@ namespace ByteDev.DotNet.SolutionViewer
 
         public static void WriteSlnHeader(this Output source, FileInfo slnFileInfo)
         {
-            source.WriteLine(slnFileInfo.Name, new OutputColor(ConsoleColor.White, ConsoleColor.Blue));
+            var projects = Io.GetDotNetSolutionProjects(slnFileInfo);
+
+            source.WriteLine($"{slnFileInfo.Name} ({projects.Count()} projects)", new OutputColor(ConsoleColor.White, ConsoleColor.Blue));
             source.WriteBlankLines();
             source.WriteLine($"Path: {slnFileInfo.FullName}");
             source.WriteBlankLines();
