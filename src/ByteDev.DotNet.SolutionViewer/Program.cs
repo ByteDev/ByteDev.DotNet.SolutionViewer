@@ -26,7 +26,7 @@ namespace ByteDev.DotNet.SolutionViewer
                 
                 var path = _cmdArgInfo.Arguments.Single(a => a.ShortName == 'p');
                 var useTable = _cmdArgInfo.Arguments.SingleOrDefault(a => a.ShortName == 't');
-                
+
                 var slnPaths = GetSlnPaths(path.Value);
 
                 Output.WriteLine($"{slnPaths.Count} solutions found.");
@@ -72,8 +72,13 @@ namespace ByteDev.DotNet.SolutionViewer
         private static IList<string> GetSlnPaths(string basePath)
         {
             if(string.IsNullOrEmpty(basePath))
-                throw new ArgumentException("No base path supplied as argument.");
+                throw new ArgumentException("No base or .sln file path supplied as argument.");
 
+            if (basePath.EndsWith(".sln"))
+            {
+                return new List<string>  { basePath };
+            }
+            
             var slnPaths = Directory.EnumerateFiles(basePath, "*.sln", SearchOption.AllDirectories)?.ToList();
 
             if (slnPaths == null || slnPaths.Count == 0)
