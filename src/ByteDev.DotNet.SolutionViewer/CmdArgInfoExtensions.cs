@@ -10,7 +10,7 @@ namespace ByteDev.DotNet.SolutionViewer
         {
             var cmdArg = source.GetArgument('i');
 
-            if (!cmdArg.HasValue)
+            if (cmdArg == null)
                 return new List<string>();
 
             return cmdArg.Value.Split(',').ToList();
