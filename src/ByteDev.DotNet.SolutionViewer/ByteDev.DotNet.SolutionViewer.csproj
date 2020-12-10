@@ -2,16 +2,16 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
     <Authors>Paul Stanley</Authors>
     <Description>Console application that given a base path outputs a report of all the solutions in the base path, the projects in each solution and what their targets (.NET Framework, Standard, Core etc.) are.</Description>
     <AssemblyName>SolutionViewer</AssemblyName>
-    <Version>2.0.1</Version>
+    <Version>3.0.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="ByteDev.Cmd" Version="4.1.0" />
-    <PackageReference Include="ByteDev.DotNet" Version="5.0.1" />
+    <PackageReference Include="ByteDev.Cmd" Version="4.1.1" />
+    <PackageReference Include="ByteDev.DotNet" Version="7.1.0" />
   </ItemGroup>
 
 </Project>

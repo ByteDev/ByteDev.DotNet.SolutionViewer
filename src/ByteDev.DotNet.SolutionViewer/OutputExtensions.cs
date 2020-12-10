@@ -43,10 +43,11 @@ namespace ByteDev.DotNet.SolutionViewer
             foreach (var slnProject in Io.GetDotNetSolutionProjects(slnFileInfo))
             {
                 var basePath = Path.GetDirectoryName(slnFileInfo.FullName);
+                var projFilePath = Path.Combine(basePath, slnProject.Path);
 
                 try
                 {
-                    var dotNetProject = DotNetProject.Load(Path.Combine(basePath, slnProject.Path));
+                    var dotNetProject = DotNetProject.Load(projFilePath);
 
                     source.WriteAlignToSides(slnProject.ToText(options), dotNetProject.ToText());
                 }
@@ -54,11 +55,15 @@ namespace ByteDev.DotNet.SolutionViewer
                 {
                     source.WriteAlignToSides(slnProject.Name, "(Unknown)", new OutputColor(ConsoleColor.Yellow));
                 }
+                catch (Exception ex)
+                {
+                    source.WriteAlignToSides(slnProject.Name, $"ERROR: {ex.Message}", new OutputColor(ConsoleColor.Red));
+                }
             }
 
             source.WriteLine();
         }
-        
+
         public static void WriteSlnProjectsInTable(this Output source, FileInfo slnFileInfo, WriteSlnProjectsOptions options)
         {
             var slnProjects = Io.GetDotNetSolutionProjects(slnFileInfo);
@@ -78,16 +83,21 @@ namespace ByteDev.DotNet.SolutionViewer
             foreach (var slnProject in slnProjects)
             {
                 var basePath = Path.GetDirectoryName(slnFileInfo.FullName);
+                var projFilePath = Path.Combine(basePath, slnProject.Path);
 
                 try
                 {
-                    var dotNetProject = DotNetProject.Load(Path.Combine(basePath, slnProject.Path));
-                    
-                    table.UpdateRow(rowNumber, new []{ new Cell(slnProject.ToText(options)), new Cell(dotNetProject.ToText()) { ValueAlignment = CellValueAlignment.Right } });
+                    var dotNetProject = DotNetProject.Load(projFilePath);
+
+                    table.UpdateRow(rowNumber, new[] {new Cell(slnProject.ToText(options)), new Cell(dotNetProject.ToText()) {ValueAlignment = CellValueAlignment.Right}});
                 }
                 catch (InvalidDotNetProjectException)
                 {
-                    table.UpdateRow(rowNumber, new[] { new Cell(slnProject.ToText(options)), new Cell("(Unknown)") { ValueAlignment = CellValueAlignment.Right}});
+                    table.UpdateRow(rowNumber, new[] {new Cell(slnProject.ToText(options)), new Cell("(Unknown)") {ValueAlignment = CellValueAlignment.Right}});
+                }
+                catch (Exception ex)
+                {
+                    table.UpdateRow(rowNumber, new[] {new Cell(slnProject.ToText(options)), new Cell($"ERROR: {ex.Message}") {ValueAlignment = CellValueAlignment.Right}});
                 }
 
                 rowNumber++;

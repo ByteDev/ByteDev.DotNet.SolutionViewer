@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using ByteDev.Cmd;
@@ -16,6 +17,9 @@ namespace ByteDev.DotNet.SolutionViewer
 
         private static void Main(string[] args)
         {
+            var sw = new Stopwatch();
+            sw.Start();
+
             Output.WriteAppHeader();
 
             _cmdAllowedArgs = CmdAllowedArgsFactory.Create();
@@ -23,11 +27,17 @@ namespace ByteDev.DotNet.SolutionViewer
             try
             {
                 _cmdArgInfo = new CmdArgInfo(args, _cmdAllowedArgs);
-                
-                var path = _cmdArgInfo.Arguments.Single(a => a.ShortName == 'p');
-                var useTable = _cmdArgInfo.Arguments.SingleOrDefault(a => a.ShortName == 't');
 
-                var slnPaths = GetSlnPaths(path.Value);
+                CmdArg path = _cmdArgInfo.GetArgument('p');
+                CmdArg useTable = _cmdArgInfo.GetArgument('t');
+                var slnsToIgnore = _cmdArgInfo.GetSlnsToIgnore();
+
+                var slnPaths = GetSlnPaths(path.Value, slnsToIgnore);
+
+                if (slnPaths.Count == 0)
+                {
+                    HandleError($"{path.Value} and its sub directories contain no solution files.");
+                }
 
                 Output.WriteLine($"{slnPaths.Count} solutions found.");
                 Output.WriteBlankLines();
@@ -41,8 +51,14 @@ namespace ByteDev.DotNet.SolutionViewer
             {
                 HandleError(ex.Message);
             }
-        }
 
+            sw.Stop();
+
+            Output.WriteBlankLines();
+            Output.WriteLine($"Time taken: {sw.Elapsed.TotalSeconds} seconds.");
+            Output.WriteBlankLines();
+        }
+        
         private static void WriteSlnDetailsAsTable(IList<string> slnPaths)
         {
             var options = new WriteSlnProjectsOptions { WriteProjectType = true };
@@ -69,22 +85,47 @@ namespace ByteDev.DotNet.SolutionViewer
             }
         }
 
-        private static IList<string> GetSlnPaths(string basePath)
+        private static IList<string> GetSlnPaths(string basePath, List<string> slnsToIgnore)
         {
             if(string.IsNullOrEmpty(basePath))
                 throw new ArgumentException("No base or .sln file path supplied as argument.");
 
-            if (basePath.EndsWith(".sln"))
-            {
-                return new List<string>  { basePath };
-            }
-            
-            var slnPaths = Directory.EnumerateFiles(basePath, "*.sln", SearchOption.AllDirectories)?.ToList();
+            if (IsSlnFile(basePath))
+                return new List<string> { basePath };
+
+            List<string> slnPaths = Directory.EnumerateFiles(basePath, "*.sln", SearchOption.AllDirectories)?.ToList();
 
             if (slnPaths == null || slnPaths.Count == 0)
-                HandleError($"{basePath} and its sub directories contain no solution files.");
+                return new List<string>();
 
-            return slnPaths;
+            if (slnsToIgnore == null)
+                return slnPaths;
+
+            var list = new List<string>();
+
+            foreach (var slnPath in slnPaths)
+            {
+                var shouldIgnore = false;
+
+                foreach (var slnToIgnore in slnsToIgnore)
+                {
+                    if (slnPath.EndsWith(slnToIgnore))
+                    {
+                        shouldIgnore = true;
+                        break;
+                    }
+                }
+
+                if (!shouldIgnore)
+                    list.Add(slnPath);
+            }
+        
+            return list;
+        }
+
+        private static bool IsSlnFile(string filePath)
+        {
+            return filePath.ToLower().EndsWith(".sln");
         }
 
         private static void HandleError(string message)
