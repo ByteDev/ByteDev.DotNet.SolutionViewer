@@ -5,7 +5,7 @@ namespace ByteDev.DotNet.SolutionViewer.ModelExtensions
 {
     public static class DotNetProjectExtensions
     {
-        public static string ToText(this DotNetProject source)
+        public static string ToProjectTargetsString(this DotNetProject source)
         {
             return string.Join(',', source.ProjectTargets.Select(t => t.Description));
         }

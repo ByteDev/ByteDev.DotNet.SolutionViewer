@@ -3,10 +3,11 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using ByteDev.Cmd;
-using ByteDev.Cmd.Tables;
 using ByteDev.DotNet.Project;
 using ByteDev.DotNet.SolutionViewer.ModelExtensions;
+using ByteDev.Strings;
 
 namespace ByteDev.DotNet.SolutionViewer
 {
@@ -17,7 +18,7 @@ namespace ByteDev.DotNet.SolutionViewer
             var assembly = Assembly.GetExecutingAssembly();
             var fvi = FileVersionInfo.GetVersionInfo(assembly.Location);
 
-            source.WriteBlankLines();
+            source.WriteBlankLines(1);
 
             source.Write(new MessageBox($" SolutionViewer {fvi.FileVersion} ")
             {
@@ -25,7 +26,7 @@ namespace ByteDev.DotNet.SolutionViewer
                 BorderColor = new OutputColor(ConsoleColor.White, ConsoleColor.Blue)
             });
 
-            source.WriteBlankLines();
+            source.WriteBlankLines(1);
         }
 
         public static void WriteSlnHeader(this Output source, FileInfo slnFileInfo)
@@ -33,9 +34,9 @@ namespace ByteDev.DotNet.SolutionViewer
             var projects = Io.GetDotNetSolutionProjects(slnFileInfo);
 
             source.WriteLine($"{slnFileInfo.Name} ({projects.Count()} projects)", new OutputColor(ConsoleColor.White, ConsoleColor.Blue));
-            source.WriteBlankLines();
+            source.WriteBlankLines(1);
             source.WriteLine($"Path: {slnFileInfo.FullName}");
-            source.WriteBlankLines();
+            source.WriteBlankLines(1);
         }
 
         public static void WriteSlnProjects(this Output source, FileInfo slnFileInfo, WriteSlnProjectsOptions options)
@@ -49,7 +50,15 @@ namespace ByteDev.DotNet.SolutionViewer
                 {
                     var dotNetProject = DotNetProject.Load(projFilePath);
 
-                    source.WriteAlignToSides(slnProject.ToText(options), dotNetProject.ToText());
+                    string left = slnProject.ToDescriptionString(dotNetProject, options);
+                    string right = dotNetProject.ToProjectTargetsString();
+
+                    source.WriteAlignToSides(left, right, new OutputColor(ConsoleColor.Gray));
+                    
+                    string refText = GetReferenceText(dotNetProject, options);
+
+                    if (!refText.IsNullOrEmpty())
+                        source.WriteAlignLeft(refText);
                 }
                 catch (InvalidDotNetProjectException)
                 {
@@ -64,47 +73,33 @@ namespace ByteDev.DotNet.SolutionViewer
             source.WriteLine();
         }
 
-        public static void WriteSlnProjectsInTable(this Output source, FileInfo slnFileInfo, WriteSlnProjectsOptions options)
+        private static string GetReferenceText(DotNetProject dotNetProject, WriteSlnProjectsOptions options)
         {
-            var slnProjects = Io.GetDotNetSolutionProjects(slnFileInfo);
+            var projectText = new StringBuilder();
 
-            var count = slnProjects.Count();
-
-            if (count < 1)
-                return;
-
-            var table = new Table(2, count)
+            if (options.DisplayProjectReferencePaths || options.DisplayProjectReferenceNames)
             {
-                ValueColor = new OutputColor(ConsoleColor.White, ConsoleColor.Blue)
-            };
-
-            var rowNumber = 0;
-
-            foreach (var slnProject in slnProjects)
-            {
-                var basePath = Path.GetDirectoryName(slnFileInfo.FullName);
-                var projFilePath = Path.Combine(basePath, slnProject.Path);
-
-                try
+                foreach (var projectReference in dotNetProject.ProjectReferences)
                 {
-                    var dotNetProject = DotNetProject.Load(projFilePath);
+                    projectText.AppendIfNotEmpty(Environment.NewLine);
 
-                    table.UpdateRow(rowNumber, new[] {new Cell(slnProject.ToText(options)), new Cell(dotNetProject.ToText()) {ValueAlignment = CellValueAlignment.Right}});
+                    if (options.DisplayProjectReferenceNames)
+                        projectText.Append($"-> { new FileInfo(projectReference.FilePath).Name }");
+                    else
+                        projectText.Append($"-> {projectReference.FilePath}");
                 }
-                catch (InvalidDotNetProjectException)
-                {
-                    table.UpdateRow(rowNumber, new[] {new Cell(slnProject.ToText(options)), new Cell("(Unknown)") {ValueAlignment = CellValueAlignment.Right}});
-                }
-                catch (Exception ex)
-                {
-                    table.UpdateRow(rowNumber, new[] {new Cell(slnProject.ToText(options)), new Cell($"ERROR: {ex.Message}") {ValueAlignment = CellValueAlignment.Right}});
-                }
-
-                rowNumber++;
             }
 
-            source.Write(table);
-            source.WriteLine();
+            if (options.DisplayPackageReferences)
+            {
+                foreach (var packageReference in dotNetProject.PackageReferences)
+                {
+                    projectText.AppendIfNotEmpty(Environment.NewLine);
+                    projectText.Append($"--> {packageReference.Name} {packageReference.Version}");
+                }
+            }
+
+            return projectText.ToString();
         }
     }
 }

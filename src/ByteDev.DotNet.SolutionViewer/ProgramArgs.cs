@@ -8,19 +8,25 @@ namespace ByteDev.DotNet.SolutionViewer
     {
         public string Path { get; }
 
-        public bool UseTable { get; }
-
         public List<string> IgnoreSlnFiles { get; }
+
+        public bool DisplayProjectReferencePaths { get; }
+
+        public bool DisplayProjectReferenceNames { get; }
+
+        public bool DisplayPackageReferences { get; }
 
         public ProgramArgs(CmdArgInfo cmdArgInfo)
         {
             Path = cmdArgInfo.GetPath();
 
             if (string.IsNullOrEmpty(Path))
-                throw new ArgumentException("No base or .sln file path supplied as argument.");
+                throw new ArgumentException("No base path or .sln file path supplied as argument.");
             
-            UseTable = cmdArgInfo.GetUseTable();
             IgnoreSlnFiles = cmdArgInfo.GetSlnsToIgnore();
+            DisplayProjectReferencePaths = cmdArgInfo.DisplayProjectReferencePaths();
+            DisplayProjectReferenceNames = cmdArgInfo.DisplayProjectReferenceNames();
+            DisplayPackageReferences = cmdArgInfo.DisplayPackageReferences();
         }
     }
 }

@@ -16,14 +16,24 @@ namespace ByteDev.DotNet.SolutionViewer
             return cmdArg.Value.Split(',').ToList();
         }
 
-        public static bool GetUseTable(this CmdArgInfo source)
-        {
-            return source.GetArgument('t') != null;
-        }
-
         public static string GetPath(this CmdArgInfo source)
         {
             return source.GetArgument('p').Value;
+        }
+
+        public static bool DisplayProjectReferencePaths(this CmdArgInfo source)
+        {
+            return source.HasArgument("refprojpath");
+        }
+
+        public static bool DisplayProjectReferenceNames(this CmdArgInfo source)
+        {
+            return source.HasArgument("refprojname");
+        }
+
+        public static bool DisplayPackageReferences(this CmdArgInfo source)
+        {
+            return source.HasArgument("refpack");
         }
     }
 }

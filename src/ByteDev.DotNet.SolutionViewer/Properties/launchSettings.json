@@ -2,7 +2,7 @@
   "profiles": {
     "ByteDev.DotNet.SolutionViewer": {
       "commandName": "Project",
-      "commandLineArgs": "-p C:\\Git\\AzureDevOps -i libsass.sln"
+      "commandLineArgs": "-p C:\\Git\\AzureDevOps\\ChubbPlatform\\ChubbPlatform.CargoNet.sln refproj refpack"
     }
   }
 }

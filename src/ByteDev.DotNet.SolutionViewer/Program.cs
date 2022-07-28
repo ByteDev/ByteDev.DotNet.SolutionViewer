@@ -38,12 +38,9 @@ namespace ByteDev.DotNet.SolutionViewer
                 }
 
                 Output.WriteLine($"{slnPaths.Count} solutions found.");
-                Output.WriteBlankLines();
+                Output.WriteBlankLines(1);
 
-                if (_programArgs.UseTable)
-                    WriteSlnDetailsAsTable(slnPaths);
-                else
-                    WriteSlnDetails(slnPaths);
+                WriteSlnDetails(slnPaths);
             }
             catch (Exception ex)
             {
@@ -52,27 +49,14 @@ namespace ByteDev.DotNet.SolutionViewer
 
             sw.Stop();
 
-            Output.WriteBlankLines();
+            Output.WriteBlankLines(1);
             Output.WriteLine($"Time taken: {sw.Elapsed.TotalSeconds} seconds.");
-            Output.WriteBlankLines();
+            Output.WriteBlankLines(1);
         }
         
-        private static void WriteSlnDetailsAsTable(IEnumerable<string> slnPaths)
-        {
-            var options = new WriteSlnProjectsOptions { WriteProjectType = true };
-
-            foreach (var slnPath in slnPaths)
-            {
-                var slnFileInfo = new FileInfo(slnPath);
-
-                Output.WriteSlnHeader(slnFileInfo);
-                Output.WriteSlnProjectsInTable(slnFileInfo, options);
-            }
-        }
-
         private static void WriteSlnDetails(IEnumerable<string> slnPaths)
         {
-            var options = new WriteSlnProjectsOptions { WriteProjectType = true };
+            var options = CreateWriteSlnProjectsOptions();
 
             foreach (var slnPath in slnPaths)
             {
@@ -85,7 +69,7 @@ namespace ByteDev.DotNet.SolutionViewer
 
         private static IList<string> GetSlnPaths()
         {
-            if (IsPathSlnFile(_programArgs.Path))
+            if (IsSlnFile(_programArgs.Path))
                 return new List<string> { _programArgs.Path };
 
             var slnPaths = Directory.EnumerateFiles(_programArgs.Path, "*.sln", SearchOption.AllDirectories)?.ToList();
@@ -106,9 +90,20 @@ namespace ByteDev.DotNet.SolutionViewer
             }
         }
 
-        private static bool IsPathSlnFile(string filePath)
+        private static bool IsSlnFile(string filePath)
         {
             return filePath.ToLower().EndsWith(".sln");
+        }
+
+        private static WriteSlnProjectsOptions CreateWriteSlnProjectsOptions()
+        {
+            return new WriteSlnProjectsOptions
+            {
+                DisplayProjectType = true,
+                DisplayPackageReferences = _programArgs.DisplayPackageReferences,
+                DisplayProjectReferencePaths = _programArgs.DisplayProjectReferencePaths,
+                DisplayProjectReferenceNames = _programArgs.DisplayProjectReferenceNames
+            };
         }
 
         private static void HandleError(string message)

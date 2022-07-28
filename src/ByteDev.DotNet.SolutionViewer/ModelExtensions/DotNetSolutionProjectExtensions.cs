@@ -1,19 +1,21 @@
-﻿using ByteDev.DotNet.Solution;
+﻿using System.Text;
+using ByteDev.DotNet.Project;
+using ByteDev.DotNet.Solution;
 
 namespace ByteDev.DotNet.SolutionViewer.ModelExtensions
 {
     public static class DotNetSolutionProjectExtensions
     {
-        public static string ToText(this DotNetSolutionProject source, WriteSlnProjectsOptions options)
+        public static string ToDescriptionString(this DotNetSolutionProject source, DotNetProject dotNetProject, WriteSlnProjectsOptions options)
         {
-            var projectText = source.Name;
+            var projectText = new StringBuilder(source.Name);
 
-            if (options.WriteProjectType)
+            if (options.DisplayProjectType)
             {
-                projectText += $" ({source.Type.Description.Replace("(", string.Empty).Replace(")", string.Empty)})";       // Removed () cos (Unknown)
+                projectText.Append($" ({source.Type.Description.Replace("(", string.Empty).Replace(")", string.Empty)})");
             }
 
-            return projectText;
+            return projectText.ToString();
         }
     }
 }
