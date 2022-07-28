@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -27,6 +28,18 @@ namespace ByteDev.DotNet.SolutionViewer
             });
 
             source.WriteBlankLines(1);
+        }
+
+        public static void WriteIgnoreSlnFiles(this Output source, List<string> ignoreSlnFiles)
+        {
+            source.WriteLine("Ignoring the following .sln files:");
+
+            foreach (var slnFile in ignoreSlnFiles)
+            {
+                source.WriteLine($"- {slnFile}");
+            }
+
+            source.WriteLine();
         }
 
         public static void WriteSlnHeader(this Output source, FileInfo slnFileInfo)
