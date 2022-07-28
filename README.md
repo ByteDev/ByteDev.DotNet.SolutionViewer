@@ -18,9 +18,11 @@ The repo can be cloned from git bash:
 
 Execute the `SolutionViewer.exe` with the following arguments:
 
-| Argument | Description | Required
-| --- | --- | --- |
-| `-p <BASE_PATH>` | Base path to view .sln files from. | Yes |
-| `-t` | Output details in a table format. | No |
+| Short Argument | Long Argument | Description | Required
+| --- | --- | --- | --- |
+| `-p <BASE_PATH>` | `-path <BASE_PATH>` | Base path to view .sln files from. | Yes |
+| `-t` | `-table` | Output details in a table format. | No |
+| `-i` | `-ignoresln` | CSV list of .sln files to ignore. | No |
+
 
 

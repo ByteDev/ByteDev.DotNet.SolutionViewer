@@ -9,9 +9,9 @@ namespace ByteDev.DotNet.SolutionViewer
         {
             return new List<CmdAllowedArg>
             {
-                new CmdAllowedArg('p', true) {Description = "Base path to view .sln files from or path to specific .sln file.", IsRequired = true},
-                new CmdAllowedArg('t', false) {Description = "Output details in a table format."},
-                new CmdAllowedArg('i', true) {Description = "CSV list of .sln files to ignore."}
+                new CmdAllowedArg('p', true) { Description = "Base path to view .sln files from or path to specific .sln file.", IsRequired = true, LongName = "path" },
+                new CmdAllowedArg('t', false) { Description = "Output details in a table format.", LongName = "table" },
+                new CmdAllowedArg('i', true) { Description = "CSV list of .sln files to ignore.", LongName = "ignoresln" }
             };
         }
     }

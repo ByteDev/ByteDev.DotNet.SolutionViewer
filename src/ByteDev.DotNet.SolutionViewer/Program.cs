@@ -28,21 +28,21 @@ namespace ByteDev.DotNet.SolutionViewer
             {
                 _cmdArgInfo = new CmdArgInfo(args, _cmdAllowedArgs);
 
-                CmdArg path = _cmdArgInfo.GetArgument('p');
-                CmdArg useTable = _cmdArgInfo.GetArgument('t');
-                var slnsToIgnore = _cmdArgInfo.GetSlnsToIgnore();
+                string path = _cmdArgInfo.GetPath();
+                bool useTable = _cmdArgInfo.GetUseTable();
+                List<string> slnsToIgnore = _cmdArgInfo.GetSlnsToIgnore();
 
-                var slnPaths = GetSlnPaths(path.Value, slnsToIgnore);
+                var slnPaths = GetSlnPaths(path, slnsToIgnore);
 
                 if (slnPaths.Count == 0)
                 {
-                    HandleError($"{path.Value} and its sub directories contain no solution files.");
+                    HandleError($"{path} and its sub directories contain no solution files.");
                 }
 
                 Output.WriteLine($"{slnPaths.Count} solutions found.");
                 Output.WriteBlankLines();
 
-                if (useTable != null)
+                if (useTable)
                     WriteSlnDetailsAsTable(slnPaths);
                 else
                     WriteSlnDetails(slnPaths);
