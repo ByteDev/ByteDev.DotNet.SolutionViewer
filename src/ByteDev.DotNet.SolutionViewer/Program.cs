@@ -12,8 +12,8 @@ namespace ByteDev.DotNet.SolutionViewer
     {
         private static readonly Output Output = new Output();
 
-        private static CmdArgInfo _cmdArgInfo;
-        private static IList<CmdAllowedArg> _cmdAllowedArgs;
+        private static ProgramArgs _programArgs;
+        private static List<CmdAllowedArg> _cmdAllowedArgs;
 
         private static void Main(string[] args)
         {
@@ -26,23 +26,21 @@ namespace ByteDev.DotNet.SolutionViewer
 
             try
             {
-                _cmdArgInfo = new CmdArgInfo(args, _cmdAllowedArgs);
+                var cmdArgInfo = new CmdArgInfo(args, _cmdAllowedArgs);
 
-                string path = _cmdArgInfo.GetPath();
-                bool useTable = _cmdArgInfo.GetUseTable();
-                List<string> slnsToIgnore = _cmdArgInfo.GetSlnsToIgnore();
+                _programArgs = new ProgramArgs(cmdArgInfo);
 
-                var slnPaths = GetSlnPaths(path, slnsToIgnore);
+                var slnPaths = GetSlnPaths();
 
                 if (slnPaths.Count == 0)
                 {
-                    HandleError($"{path} and its sub directories contain no solution files.");
+                    HandleError($"{_programArgs.Path} and its sub directories contain no solution files.");
                 }
 
                 Output.WriteLine($"{slnPaths.Count} solutions found.");
                 Output.WriteBlankLines();
 
-                if (useTable)
+                if (_programArgs.UseTable)
                     WriteSlnDetailsAsTable(slnPaths);
                 else
                     WriteSlnDetails(slnPaths);
@@ -59,7 +57,7 @@ namespace ByteDev.DotNet.SolutionViewer
             Output.WriteBlankLines();
         }
         
-        private static void WriteSlnDetailsAsTable(IList<string> slnPaths)
+        private static void WriteSlnDetailsAsTable(IEnumerable<string> slnPaths)
         {
             var options = new WriteSlnProjectsOptions { WriteProjectType = true };
 
@@ -74,7 +72,7 @@ namespace ByteDev.DotNet.SolutionViewer
 
         private static void WriteSlnDetails(IEnumerable<string> slnPaths)
         {
-            var options = new WriteSlnProjectsOptions {WriteProjectType = true};
+            var options = new WriteSlnProjectsOptions { WriteProjectType = true };
 
             foreach (var slnPath in slnPaths)
             {
@@ -85,45 +83,30 @@ namespace ByteDev.DotNet.SolutionViewer
             }
         }
 
-        private static IList<string> GetSlnPaths(string basePath, List<string> slnsToIgnore)
+        private static IList<string> GetSlnPaths()
         {
-            if(string.IsNullOrEmpty(basePath))
-                throw new ArgumentException("No base or .sln file path supplied as argument.");
+            if (IsPathSlnFile(_programArgs.Path))
+                return new List<string> { _programArgs.Path };
 
-            if (IsSlnFile(basePath))
-                return new List<string> { basePath };
-
-            List<string> slnPaths = Directory.EnumerateFiles(basePath, "*.sln", SearchOption.AllDirectories)?.ToList();
+            var slnPaths = Directory.EnumerateFiles(_programArgs.Path, "*.sln", SearchOption.AllDirectories)?.ToList();
 
             if (slnPaths == null || slnPaths.Count == 0)
                 return new List<string>();
 
-            if (slnsToIgnore == null)
-                return slnPaths;
+            RemoveIgnoreSlns(slnPaths);
 
-            var list = new List<string>();
-
-            foreach (var slnPath in slnPaths)
-            {
-                var shouldIgnore = false;
-
-                foreach (var slnToIgnore in slnsToIgnore)
-                {
-                    if (slnPath.EndsWith(slnToIgnore))
-                    {
-                        shouldIgnore = true;
-                        break;
-                    }
-                }
-
-                if (!shouldIgnore)
-                    list.Add(slnPath);
-            }
-        
-            return list;
+            return slnPaths;
         }
 
-        private static bool IsSlnFile(string filePath)
+        private static void RemoveIgnoreSlns(List<string> slnPaths)
+        {
+            foreach (string slnFile in _programArgs.IgnoreSlnFiles)
+            {
+                slnPaths.RemoveAll(p => p.EndsWith(slnFile));
+            }
+        }
+
+        private static bool IsPathSlnFile(string filePath)
         {
             return filePath.ToLower().EndsWith(".sln");
         }

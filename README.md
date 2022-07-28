@@ -20,7 +20,7 @@ Execute the `SolutionViewer.exe` with the following arguments:
 
 | Short Argument | Long Argument | Description | Required
 | --- | --- | --- | --- |
-| `-p <BASE_PATH>` | `-path <BASE_PATH>` | Base path to view .sln files from. | Yes |
+| `-p <BASE_PATH>` | `-path <BASE_PATH>` | Base path to view .sln files from. This can also be a path to a single .sln file. | Yes |
 | `-t` | `-table` | Output details in a table format. | No |
 | `-i` | `-ignoresln` | CSV list of .sln files to ignore. | No |
 
